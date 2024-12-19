@@ -31,7 +31,11 @@ def load_expenditure_data():
 @st.cache_data
 def load_income_tax_data():
     file_path = "Income Tax.csv"  # Income Tax Data file
-    data = pd.read_csv(file_path)
+    try:
+        data = pd.read_csv(file_path, on_bad_lines="skip")
+    except Exception as e:
+        st.error(f"Error loading Income Tax Data: {e}")
+        data = pd.DataFrame()  # Return an empty DataFrame on error
     return data
 
 # Load Data
@@ -161,6 +165,18 @@ elif dataset_type == "Income Tax Data":
     elif chart_type == "Pie Chart":
         fig = px.pie(data_to_plot, names=x_axis, values=y_axis, title=f"Pie Chart for {selected_category}")
         st.plotly_chart(fig)
+
+# --- Question & Prediction Section ---
+st.markdown("---")
+st.subheader("🤔 Ask Questions about the Data")
+question = st.text_input("Enter your question about the data:")
+
+if question:
+    # Combine all data for context
+    all_data = pd.concat([budget_data, expenditure_data, income_tax_data], ignore_index=True)
+    context = all_data.to_string(index=False)  # Convert data to string context
+    answer = query_hf_api(question, context)
+    st.write(f"**Answer:** {answer}")
 
 # Footer
 st.markdown("---")
